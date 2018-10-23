@@ -17,6 +17,11 @@ def readCSV(filename):
     return [timesarr, voltagesarr]
 
 
+def getDuration(timesarr):
+    dur = max(timesarr)-min(timesarr)
+    return dur
+
+
 def voltageExtremes(voltages):
     """
     Returns tuple of min,max of array of voltages
@@ -30,6 +35,5 @@ def voltageExtremes(voltages):
             max = k
     return (min, max)
 
-
 if __name__ == "__main__":
-        [time, voltage] = readCSV('lol')
+        [time, voltage] = readCSV('test_data1.csv')
