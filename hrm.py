@@ -30,6 +30,5 @@ def voltageExtremes(voltages):
             max = k
     return (min, max)
 
-
 if __name__ == "__main__":
         [time, voltage] = readCSV('lol')
