@@ -2,6 +2,7 @@ import csv
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+import json
 CONST_MAXVOLTAGE = 10000
 CONST_MINVOLTAGE = -10000
 CONST_MINBPS = 0.5
@@ -102,10 +103,41 @@ def voltageExtremes(voltages):
             max = k
     return (min, max)
 
+
+def hrd(time, voltage, lower=CONST_MINTIME, upper=CONST_MAXTIME, duration=-1):
+    """
+    Wrapper function used to call other functions giving metrics
+    Metrics used to construct dictionary
+    Returns dictionary
+    """
+    dict = {}
+    dict["voltage_extremes"] = voltageExtremes(voltage)
+    dict["duration"] = getDuration(time)
+    beats = getBeats(time, voltage)
+    dict["beats"] = beats
+    dict["num_beats"] = getNumBeats(beats)
+    if duration == -1:
+        dict["mean_hr_bpm"] = getMeanHR(beats, lower, upper)
+    else:
+        dict["mean_hr_bpm"] = getMeanHR(beats, duration=duration)
+    return dict
+
+
+def writeJson(filename, dict):
+    if(not isinstance(dict, type({}))):
+        return -1
+    ndict = dict.copy()
+    ndict["beats"] = ndict["beats"].tolist()
+    ind = filename.find('.')
+    if ind == -1:
+        return -1
+    jsonname = filename[0:ind] + ".json"
+    with open(jsonname, 'w') as file:
+        json.dump(ndict, file, ensure_ascii=False)
+
 if __name__ == "__main__":
         fname = input("Enter CSV File Name: ")
         [time, voltage] = readCSV(fname)
-        beattimes = getBeats(time, voltage)
         k = input("Select custom interval for Mean HR y/n?")
         if k == "y":
             print("Signal ranged from ")
@@ -113,7 +145,7 @@ if __name__ == "__main__":
             print(str(time[len(time)-1]) + " seconds")
             lower = input("Enter lower in seconds:")
             upper = input("Enter upper in seconds:")
-            meanhr = getMeanHR(beattimes, float(lower), float(upper))
+            hrdict = hrd(time, voltage, float(lower), float(upper))
         else:
-            meanhr = getMeanHR(beattimes, duration=getDuration(time))
-        print(meanhr)
+            hrdict = hrd(time, voltage, duration=getDuration(time))
+        writeJson(fname, hrdict)
