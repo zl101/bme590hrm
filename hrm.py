@@ -7,6 +7,8 @@ CONST_MINVOLTAGE = -10000
 CONST_MINBPS = 0.5
 CONST_CUTOFF = 0.7
 CONST_MINTIMEBETWEENBEATS = 0.2
+CONST_MINTIME = -10000
+CONST_MAXTIME = 10000
 
 
 def readCSV(filename):
@@ -64,6 +66,29 @@ def getNumBeats(beatsarr):
     return len(beatsarr)
 
 
+def getMeanHR(beatsarr, lower=CONST_MINTIME, upper=CONST_MAXTIME, duration=-1):
+    """
+    use upper and lower to pass in user specified time interval
+    if no user duration, must pass in duration used to get the beats arr
+    """
+    length = len(beatsarr)
+    lowerindex = 0
+    upperindex = length-1
+    for i in range(0, length):
+        if beatsarr[i] > lower:
+            lowerindex = i
+            break
+    for j in range(0, length):
+        if beatsarr[length-j-1] < upper:
+            upperindex = length-j
+            break
+    nbeats = beatsarr[lowerindex:upperindex]
+    if(duration == -1):
+        return len(nbeats)/((upper-lower)/60)
+    else:
+        return len(nbeats)*60/duration
+
+
 def voltageExtremes(voltages):
     """
     Returns tuple of min,max of array of voltages
@@ -78,9 +103,17 @@ def voltageExtremes(voltages):
     return (min, max)
 
 if __name__ == "__main__":
-        [time, voltage] = readCSV('test_data11.csv')
+        fname = input("Enter CSV File Name: ")
+        [time, voltage] = readCSV(fname)
         beattimes = getBeats(time, voltage)
-        print(getNumBeats(beattimes))
-        fig, ax = plt.subplots()
-        ax.plot(time, voltage)
-        plt.show()
+        k = input("Select custom interval for Mean HR y/n?")
+        if k == "y":
+            print("Signal ranged from ")
+            print(str(time[0]) + " seconds to ")
+            print(str(time[len(time)-1]) + " seconds")
+            lower = input("Enter lower in seconds:")
+            upper = input("Enter upper in seconds:")
+            meanhr = getMeanHR(beattimes, float(lower), float(upper))
+        else:
+            meanhr = getMeanHR(beattimes, duration=getDuration(time))
+        print(meanhr)
