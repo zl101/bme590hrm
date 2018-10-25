@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import json
+import sys
+import logging
 CONST_MAXVOLTAGE = 10000
 CONST_MINVOLTAGE = -10000
 CONST_MINBPS = 0.5
@@ -10,6 +12,7 @@ CONST_CUTOFF = 0.7
 CONST_MINTIMEBETWEENBEATS = 0.2
 CONST_MINTIME = -10000
 CONST_MAXTIME = 10000
+CONST_MINPOINTSFORECG = 1000
 
 
 def readCSV(filename):
@@ -25,8 +28,15 @@ def readCSV(filename):
                 continue
             if(row[0] == '' or row[1] == ''):
                 continue
-            timesarr.append(float(row[0]))
-            voltagesarr.append(float(row[1]))
+            try:
+                timesarr.append(float(row[0]))
+                voltagesarr.append(float(row[1]))
+            except:
+                logging.error("Found invalid values in file")
+                raise TypeError("Invalid values encountered in file")
+    if(max(voltagesarr) > 300):
+        logging.error("Found value above 300")
+        raise ValueError("Voltages Exceed Range")
     return [timesarr, voltagesarr]
 
 
@@ -119,11 +129,16 @@ def hrd(time, voltage, lower=CONST_MINTIME, upper=CONST_MAXTIME, duration=-1):
     if duration == -1:
         dict["mean_hr_bpm"] = getMeanHR(beats, lower, upper)
     else:
+        if(duration == 0):
+            raise ValueError("Invalid Duration")
         dict["mean_hr_bpm"] = getMeanHR(beats, duration=duration)
     return dict
 
 
 def writeJson(filename, dict):
+    """
+    given a filename and dictionary writes dictionary to filename.json
+    """
     if(not isinstance(dict, type({}))):
         return -1
     ndict = dict.copy()
@@ -136,16 +151,45 @@ def writeJson(filename, dict):
         json.dump(ndict, file, ensure_ascii=False)
 
 if __name__ == "__main__":
-        fname = input("Enter CSV File Name: ")
-        [time, voltage] = readCSV(fname)
+        """
+        Main gets user inputs and uses those inputs to perform task
+        """
+        logging.basicConfig(filename='hrm.log', level=logging.INFO,
+                            format='%(asctime)s %(message)s',
+                            datefmt='%m/%d/%Y %I:%M:%S %p')
+        logging.info("Starting New Log...")
+        try:
+            fname = input("Enter CSV File Name: ")
+            [time, voltage] = readCSV(fname)
+        except:
+            logging.error("Unable to Read File")
+            sys.exit("Invalid File")
+        logging.info("filename: " + fname)
+        if(len(time) < CONST_MINPOINTSFORECG):
+            sys.exit("Not enough data to perform analysis")
         k = input("Select custom interval for Mean HR y/n?")
         if k == "y":
             print("Signal ranged from ")
-            print(str(time[0]) + " seconds to ")
-            print(str(time[len(time)-1]) + " seconds")
+            print(str(min(time)) + " seconds to ")
+            print(str(max(time)) + " seconds")
             lower = input("Enter lower in seconds:")
             upper = input("Enter upper in seconds:")
-            hrdict = hrd(time, voltage, float(lower), float(upper))
+            logging.info("User Input Lower: " + lower)
+            logging.info("User Input Upper: " + upper)
+            try:
+                lower = float(lower)
+                upper = float(upper)
+            except:
+                logging.error("Check User Input")
+                sys.exit("User Input Non numeric")
+            if(lower < min(time)):
+                logging.error("Check User Input")
+                sys.exit("User Input Below Valid Range")
+            if(upper > max(time)):
+                logging.error("Check User Input")
+                sys.exit("User Input Above Valid Range")
+            hrdict = hrd(time, voltage, lower, upper)
         else:
             hrdict = hrd(time, voltage, duration=getDuration(time))
         writeJson(fname, hrdict)
+        print("Wrote Stats to File")
