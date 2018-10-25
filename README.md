@@ -1,4 +1,5 @@
 # bme590hrm
+[![Build Status](https://travis-ci.org/zl101/bme590hrm.svg?branch=master)](https://travis-ci.org/zl101/bme590hrm)
 ##To Run
 + Use Python 3, install requirements, run python hrm.py
 + Desired stats will be written and stored in json file
