@@ -18,6 +18,10 @@ CONST_MINPOINTSFORECG = 1000
 def readCSV(filename):
     """
     Reads a time/voltage csv file and returns into arrays
+
+    :param filename: The string of file to be read
+
+    :returns: array of times and voltages
     """
     with open(filename) as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
@@ -43,6 +47,10 @@ def readCSV(filename):
 def getDuration(timesarr):
     """
     gets the duration of the input time array
+
+    :param timesarr: array of times as returned by readCSV
+
+    :returns: Duration for which there are times
     """
     dur = max(timesarr)-min(timesarr)
     return dur
@@ -50,7 +58,13 @@ def getDuration(timesarr):
 
 def getBeats(timesarr, voltagesarr):
     """
-    returns array of times of when there were beats
+    detects peaks over time of the ecg Signal
+
+    :param timesarr: array of times from readCSV
+
+    :param voltagesarr: array of voltages from readCSV
+
+    :returns: Array of times at which beats are detected
     """
     dur = getDuration(timesarr)
     numpointsforavg = int(np.ceil(CONST_MINBPS*dur))
@@ -72,15 +86,28 @@ def getBeats(timesarr, voltagesarr):
 
 def getNumBeats(beatsarr):
     """
-    given array of times at which beats occur, returns total number of beats
+    helper which gets total number of beats detected
+
+    :param beatsarr: Array of beat times from getBeats
+
+    :returns: Number of beats detected
     """
     return len(beatsarr)
 
 
 def getMeanHR(beatsarr, lower=CONST_MINTIME, upper=CONST_MAXTIME, duration=-1):
     """
-    use upper and lower to pass in user specified time interval
-    if no user duration, must pass in duration used to get the beats arr
+    Computes mean hr, must specify either lower && upper or duration
+
+    :param beatsarr: array of beat times from getBeats
+
+    :param lower: Optional bottom side of interval
+
+    :param upper: Optional upper side of interval
+
+    :param duration: Optional duration to compute hr over
+
+    :returns: Mean heart rate over interval
     """
     length = len(beatsarr)
     lowerindex = 0
@@ -102,7 +129,11 @@ def getMeanHR(beatsarr, lower=CONST_MINTIME, upper=CONST_MAXTIME, duration=-1):
 
 def voltageExtremes(voltages):
     """
-    Returns tuple of min,max of array of voltages
+    Gets tuple of min,max of array of voltages
+
+    :param voltages: Array of voltages from readCSV
+
+    :returns: tuple of min, max voltages
     """
     min = CONST_MAXVOLTAGE
     max = CONST_MINVOLTAGE
@@ -117,8 +148,18 @@ def voltageExtremes(voltages):
 def hrd(time, voltage, lower=CONST_MINTIME, upper=CONST_MAXTIME, duration=-1):
     """
     Wrapper function used to call other functions giving metrics
-    Metrics used to construct dictionary
-    Returns dictionary
+
+    :param time: time array from readCSV
+
+    :param voltage: voltage array from readCSV
+
+    :param lower: see getMeanHR
+
+    :param upper: see getMeanHR
+
+    :param duration: see getMeanHR
+
+    :returns: dictionary of all compiled metrics
     """
     dict = {}
     dict["voltage_extremes"] = voltageExtremes(voltage)
@@ -137,7 +178,13 @@ def hrd(time, voltage, lower=CONST_MINTIME, upper=CONST_MAXTIME, duration=-1):
 
 def writeJson(filename, dict):
     """
-    given a filename and dictionary writes dictionary to filename.json
+    Writes json to file
+
+    :param filename: filename as entered by User
+
+    :param dict: dictionary as returned by hrd
+
+    :returns: -1 if unable to write , else does not return
     """
     if(not isinstance(dict, type({}))):
         return -1
