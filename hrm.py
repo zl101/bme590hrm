@@ -192,4 +192,5 @@ if __name__ == "__main__":
         else:
             hrdict = hrd(time, voltage, duration=getDuration(time))
         writeJson(fname, hrdict)
+        metrics = hrdict
         print("Wrote Stats to File")
